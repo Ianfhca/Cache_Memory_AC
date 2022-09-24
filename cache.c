@@ -47,4 +47,5 @@ int main () {
     }
 
     printf("\n ")
+    scanf("%d" &direction);
 }

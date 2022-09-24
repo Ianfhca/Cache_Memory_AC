@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <string.h>
 
-int tam_pal = 4;
+int mcSize = 8;
+
+int wSize = 4;
 int main () {
-    scanf("%d", &tam_pal);
-    printf("%d", tam_pal);
+    scanf("%d", &wSize);
+    printf("%d\n", wSize);
 }

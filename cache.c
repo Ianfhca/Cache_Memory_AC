@@ -46,6 +46,6 @@ int main () {
         j = 0;
     }
 
-    printf("\n ")
+    printf("holas\n ")
     scanf("%d" &direction);
 }

@@ -4,8 +4,10 @@
 int cmSize = 32; // Default wordSize*blockSize
 int blockSize = 8; // Default 8 words
 int wordSize = 4; // Default 4 bytes
-int setSize = 1; // Default Direct-Map
+int setSize = 1; // (Default) 1 = Direct-Map,  8 = fully associative, 2 or 4 = set associative
 int repPolicy = 0; // 0 = FIFO and 1 = LRU
+
+
 
 int direction = 0; // Default first @
 int op = 0; // 0 = LD and 1 = ST
@@ -14,7 +16,7 @@ int op = 0; // 0 = LD and 1 = ST
 
 void printCache();
 void createCache();
-
+void modifyBlock();
 
 
 int main () {
@@ -41,29 +43,35 @@ int main () {
     int cm[blockSize][5];
     createCache(cm);
 
-    int word = 0;
-    int blockMP = 0;
-    int tag = 0;
-    int blockMC = 0;
-    int set = 0;
 
-    printf("Introduce direction: ");
-    scanf("%d", &direction);
+    while(1){
 
-    printf("Introduce read (0) or write (1) operation: ");
-    scanf("%d", &op);
+        int word = 0;
+        int blockMP = 0;
+        int tag = 0;
+        int blockMC = 0;
+        int set = 0;
 
-    word = direction/wordSize;
-    blockMP = direction/cmSize;
+        
+        printf("Introduce direction: ");
+        scanf("%d", &direction);
 
-    blockMC = blockMP%blockSize;
+        printf("Introduce read (0) or write (1) operation: ");
+        scanf("%d", &op);
+
+        word = direction/wordSize;
+        blockMP = direction/cmSize;
+
+        blockMC = blockMP%blockSize;
+        tag = blockMP/blockSize;
 
 
+        modifyBlock(cm, blockMP, blockMC , setSize, direction, tag);
+        printCache(cm);
+        
 
-    cm[blockMC][0] = 1;
-    printCache(cm);
-    
-
+        
+    }
     return 0;
 }
 
@@ -80,10 +88,10 @@ void createCache(int cm[blockSize][5]){
     for (i; i < blockSize; i++) {
         for (j; j < 5; j++) {
             cm[i][j] = 0;
-            if (j == 3) {
-                printf("%d ||  ", cm[i][j]);
-            } else {
+            if (j < 4) {
                 printf("%d ", cm[i][j]);
+            } else {
+                printf("||  %d ", cm[i][j]);
             }
         }
         printf("\n");
@@ -96,18 +104,58 @@ Function that print the memory cache.
 */
 void printCache(int cm[blockSize][5]){
 
-        int i = 0, j = 0;
+    int i = 0, j = 0, bussy = 0;
     printf("B D T R ||  B\n");
     printf("---------------\n");
     for (i; i < blockSize; i++) {
+        if (cm[i][0] == 1){
+            bussy = 1;
+        }
         for (j; j < 5; j++) {
-            if (j == 3) {
-                printf("%d ||  ", cm[i][j]);
-            } else {
+            if (j < 4) {
                 printf("%d ", cm[i][j]);
+            } else {
+                if (bussy == 1){
+                    printf("||  b%d", cm[i][j]);
+                    bussy = 0;
+                } else {
+                printf("||  %d ", cm[i][j]);
+                }
             }
         }
         printf("\n");
         j = 0;
     }
 }
+
+
+/*
+Function that modificated the cache memory.
+*/
+void modifyBlock(int cm[blockSize][5], int blockMP, int blockMC , int setSize, int direction, int tag){
+    if (setSize == 1) {
+        if (cm[blockMC][0] == 0) { 
+            cm[blockMC][0] = 1;
+            cm[blockMC][2] = tag;
+            cm[blockMC][4] = blockMP;
+        } else {
+            if (cm[blockMC][4] == blockMP) {
+            //HIT MARKER
+            } else {
+            //MISS RUSSIA
+            }
+        } 
+
+
+
+
+
+    } else if (setSize == 8) {
+                    //fully associative
+    } else {
+                    //set associative
+    }
+}
+
+
+

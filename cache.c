@@ -46,6 +46,8 @@ int main () {
         j = 0;
     }
 
-    printf("\n ")
-    scanf("%d" &direction);
+    printf("Introduce direction: ");
+    scanf("%d", &direction);
+
+    
 }

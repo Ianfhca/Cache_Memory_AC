@@ -46,8 +46,37 @@ int main () {
         j = 0;
     }
 
+    int word = 0;
+    int blockMP = 0;
+    int tag = 0;
+    int blockMC = 0;
+    int set = 0;
+
     printf("Introduce direction: ");
     scanf("%d", &direction);
 
-    
+    printf("Introduce read (0) or write (1) operation: ");
+    scanf("%d", &op);
+
+    word = direction/wordSize;
+    blockMP = direction/cmSize;
+
+    blockMC = blockMP%blockSize;
+
+    cm[blockMC][0] = 1;
+
+    i = 0, j = 0;
+    printf("B D T R ||  B\n");
+    printf("---------------\n");
+    for (i; i < blockSize; i++) {
+        for (j; j < 5; j++) {
+            if (j == 3) {
+                printf("%d ||  ", cm[i][j]);
+            } else {
+                printf("%d ", cm[i][j]);
+            }
+        }
+        printf("\n");
+        j = 0;
+    }
 }

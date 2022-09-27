@@ -10,6 +10,13 @@ int repPolicy = 0; // 0 = FIFO and 1 = LRU
 int direction = 0; // Default first @
 int op = 0; // 0 = LD and 1 = ST
 
+
+
+void printCache();
+void createCache();
+
+
+
 int main () {
     printf("Insert word size: ");
     //scanf("%d", &wordSize);
@@ -27,24 +34,12 @@ int main () {
     } else if (repPolicy == 1) {
         printf("LRU policy\n");
     }
-
     printf("\n");
+    
+
+
     int cm[blockSize][5];
-    int i = 0, j = 0;
-    printf("B D T R ||  B\n");
-    printf("---------------\n");
-    for (i; i < blockSize; i++) {
-        for (j; j < 5; j++) {
-            cm[i][j] = 0;
-            if (j == 3) {
-                printf("%d ||  ", cm[i][j]);
-            } else {
-                printf("%d ", cm[i][j]);
-            }
-        }
-        printf("\n");
-        j = 0;
-    }
+    createCache(cm);
 
     int word = 0;
     int blockMP = 0;
@@ -63,9 +58,45 @@ int main () {
 
     blockMC = blockMP%blockSize;
 
-    cm[blockMC][0] = 1;
 
-    i = 0, j = 0;
+
+    cm[blockMC][0] = 1;
+    printCache(cm);
+    
+
+    return 0;
+}
+
+
+
+/*
+Function that creates a memory cache empty.
+*/
+void createCache(int cm[blockSize][5]){
+
+    int i = 0, j = 0;
+    printf("B D T R ||  B\n");
+    printf("---------------\n");
+    for (i; i < blockSize; i++) {
+        for (j; j < 5; j++) {
+            cm[i][j] = 0;
+            if (j == 3) {
+                printf("%d ||  ", cm[i][j]);
+            } else {
+                printf("%d ", cm[i][j]);
+            }
+        }
+        printf("\n");
+        j = 0;
+    }
+}
+
+/*
+Function that print the memory cache.
+*/
+void printCache(int cm[blockSize][5]){
+
+        int i = 0, j = 0;
     printf("B D T R ||  B\n");
     printf("---------------\n");
     for (i; i < blockSize; i++) {

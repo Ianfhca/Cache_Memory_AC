@@ -6,9 +6,10 @@ int blockSize = 8; // Default 8 words
 int wordSize = 4; // Default 4 bytes
 int setSize = 1; // (Default) 1 = Direct-Map,  8 = fully associative, 2 or 4 = set associative
 int repPolicy = 0; // 0 = FIFO and 1 = LRU
-
-
-
+//Goñi
+int hits = 0; // Number of hits.
+int miss = 0; // Number of miss.
+//
 int direction = 0; // Default first @
 int op = 0; // 0 = LD and 1 = ST
 
@@ -74,6 +75,8 @@ int main () {
         modifyBlock(cm, blockMP, blockMC , setSize, direction, tag);
         printCache(cm);
         
+        printf("Number of hits: %d \n", hits);
+        printf("Number of misses: %d \n", miss);
 
         
     }
@@ -82,9 +85,7 @@ int main () {
 
 
 
-/*
-Function that creates a memory cache empty.
-*/
+//Function that creates a memory cache empty.
 void createCache(int cm[blockSize][5]){
 
     int i = 0, j = 0;
@@ -104,9 +105,7 @@ void createCache(int cm[blockSize][5]){
     }
 }
 
-/*
-Function that print the memory cache.
-*/
+//Function that print the memory cache.
 void printCache(int cm[blockSize][5]){
 
     int i = 0, j = 0, bussy = 0;
@@ -134,20 +133,24 @@ void printCache(int cm[blockSize][5]){
 }
 
 
-/*
-Function that modificated the cache memory.
-*/
+//Function that modificated the cache memory.
 void modifyBlock(int cm[blockSize][5], int blockMP, int blockMC , int setSize, int direction, int tag){
-    if (setSize == 1) {
+    if (setSize == 1) { //miss españa
         if (cm[blockMC][0] == 0) { 
             cm[blockMC][0] = 1;
             cm[blockMC][2] = tag;
             cm[blockMC][4] = blockMP;
-        } else {
+            miss++;
+        } else {   //hit marker
             if (cm[blockMC][4] == blockMP) {
-            //HIT MARKER
-            } else {
-            //MISS RUSSIA
+            cm[blockMC][1] = 1;//dirty
+            hits++;
+            } else {  //miss rusia
+                cm[blockMC][1] = 0;//dirty clean
+                cm[blockMC][2] = tag;
+                cm[blockMC][4] = blockMP;
+                miss++;
+            //Falta trasferir los datos a la MP
             }
         } 
 

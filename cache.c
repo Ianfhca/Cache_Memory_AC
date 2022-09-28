@@ -12,17 +12,12 @@ int repPolicy = 0; // 0 = FIFO and 1 = LRU
 int direction = 0; // Default first @
 int op = 0; // 0 = LD and 1 = ST
 
-<<<<<<< HEAD
-void printCache();
-void generateCache();
-=======
 
 
 void printCache();
 void createCache();
 void modifyBlock();
 
->>>>>>> 0519be9b024541b2fbb057e6e6d45bc9a80867c5
 
 int main () {
     printf("Insert word size: ");
@@ -51,9 +46,6 @@ int main () {
 
 
     int cm[blockSize][5];
-<<<<<<< HEAD
-    generateCache(&cm);
-=======
     createCache(cm);
 
 
@@ -111,26 +103,13 @@ void createCache(int cm[blockSize][5]){
         j = 0;
     }
 }
->>>>>>> 0519be9b024541b2fbb057e6e6d45bc9a80867c5
 
 /*
 Function that print the memory cache.
 */
 void printCache(int cm[blockSize][5]){
 
-<<<<<<< HEAD
-    cm[blockMC][0] = 1;
-
-    printCache(cm);
-
-    return 0;
-}
-
-void printCache(int cm[blockSize][5]) {
-    int i = 0, j = 0;
-=======
     int i = 0, j = 0, bussy = 0;
->>>>>>> 0519be9b024541b2fbb057e6e6d45bc9a80867c5
     printf("B D T R ||  B\n");
     printf("---------------\n");
     for (i; i < blockSize; i++) {
@@ -154,25 +133,6 @@ void printCache(int cm[blockSize][5]) {
     }
 }
 
-<<<<<<< HEAD
-void generateCache(int cm[blockSize][5]) {
-    int i = 0, j = 0;
-    printf("B D T R ||  B\n");
-    printf("---------------\n");
-    for (i; i < blockSize; i++) {
-        for (j; j < 5; j++) {
-            cm[i][j] = 0;
-            if (j == 3) {
-                printf("%d ||  ", cm[i][j]);
-            } else {
-                printf("%d ", cm[i][j]);
-            }
-        }
-        printf("\n");
-        j = 0;
-    }
-}
-=======
 
 /*
 Function that modificated the cache memory.
@@ -204,4 +164,3 @@ void modifyBlock(int cm[blockSize][5], int blockMP, int blockMC , int setSize, i
 
 
 
->>>>>>> 0519be9b024541b2fbb057e6e6d45bc9a80867c5

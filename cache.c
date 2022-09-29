@@ -8,12 +8,16 @@ int setSize = 1; // (Default) 1 = Direct-Map,  8 = fully associative, 2 or 4 = s
 int repPolicy = 0; // 0 = FIFO and 1 = LRU
 //Goñi
 int hits = 0; // Number of hits.
-int miss = 0; // Number of miss.
+int misses = 0; // Number of misses.
+float hitrate = 0; // hits/hits+misses
+int accessTime = 0; // Program total access time 
 //
 int direction = 0; // Default first @
 int op = 0; // 0 = LD and 1 = ST
 
-
+// Here are the access times:
+// Tcm = 2c; Tmm = 21; Tbuff = 1c;
+int Tcm = 2; int Tmm = 21; int Tbuff = 1;
 
 void printCache();
 void createCache();
@@ -59,10 +63,10 @@ int main () {
         int set = 0;
 
         
-        printf("Introduce direction: ");
+        printf("\nIntroduce direction: ");
         scanf("%d", &direction);
 
-        printf("Introduce read (0) or write (1) operation: ");
+        printf("Select read(0) or write(1) operation: ");
         scanf("%d", &op);
 
         word = direction/wordSize;
@@ -72,14 +76,14 @@ int main () {
         tag = blockMP/blockSize;
 
 
-        modifyBlock(cm, blockMP, blockMC , setSize, direction, tag);
+        modifyBlock(cm, blockMP, blockMC , setSize, tag, direction, op, accessTime);
         printCache(cm);
         
-        printf("Number of hits: %d \n", hits);
-        printf("Number of misses: %d \n", miss);
-
-        
+        printf("\nTotal entries: %d - Hits: %d - Misses: %d \nHit rate: %.2f - Access time: %d", hits+misses, hits, misses, hitrate, accessTime);
+        //printf("\nNumber of hits: %d \n", hits);
+        //printf("Number of misses: %d \n", misses); 
     }
+
     return 0;
 }
 
@@ -134,25 +138,31 @@ void printCache(int cm[blockSize][5]){
 
 
 //Function that modificated the cache memory.
-void modifyBlock(int cm[blockSize][5], int blockMP, int blockMC , int setSize, int direction, int tag){
-    if (setSize == 1) { //miss españa
-        if (cm[blockMC][0] == 0) { 
+void modifyBlock(int cm[blockSize][5], int blockMP, int blockMC , int setSize, int tag, int direction, int op, int accessTime) {
+    if (setSize == 1) { // Direct-Map
+        if (cm[blockMC][0] == 0) { // Miss (block transfer from MM)
             cm[blockMC][0] = 1;
             cm[blockMC][2] = tag;
             cm[blockMC][4] = blockMP;
-            miss++;
-        } else {   //hit marker
-            if (cm[blockMC][4] == blockMP) {
-            cm[blockMC][1] = 1;//dirty
-            hits++;
-            } else {  //miss rusia
+            //accessTime += Tmm + (-1) * Tbuff;
+            misses++;
+        } else {
+            if (cm[blockMC][4] == blockMP && op == 0) { // Hit (reading current block)
+                accessTime += Tcm;
+                hits++;
+            } else if (cm[blockMC][4] == blockMP && op == 1) { // Hit + Dirty (writing current block)
+                cm[blockMC][1] = 1;//dirty
+                accessTime += Tcm;
+                hits++;
+            } else {  // Miss (block replacement)
+                cm[blockMC][0] = 1;
                 cm[blockMC][1] = 0;//dirty clean
                 cm[blockMC][2] = tag;
                 cm[blockMC][4] = blockMP;
-                miss++;
-            //Falta trasferir los datos a la MP
-            }
-        } 
+                accessTime += Tmm + (-1) * Tbuff;
+                misses++;
+            }//Falta trasferir los datos a la MP
+        }
 
 
 

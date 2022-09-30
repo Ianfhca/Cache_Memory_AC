@@ -6,18 +6,16 @@ int blockSize = 8; // Default 8 words
 int wordSize = 4; // Default 4 bytes
 int setSize = 1; // (Default) 1 = Direct-Map,  8 = fully associative, 2 or 4 = set associative
 int repPolicy = 0; // 0 = FIFO and 1 = LRU
-//Goñi
+
+int direction = 0; // Default first @
+int op = 0; // 0 = LD and 1 = ST
+
 int hits = 0; // Number of hits.
 int misses = 0; // Number of misses.
 float hitrate = 0; // hits/hits+misses
 int accessTime = 0; // Program total access time 
-//
-int direction = 0; // Default first @
-int op = 0; // 0 = LD and 1 = ST
 
-// Here are the access times:
-// Tcm = 2c; Tmm = 21; Tbuff = 1c;
-int Tcm = 2; int Tmm = 21; int Tbuff = 1;
+int Tcm = 2, Tmm = 21, Tbuff = 1; // Access times
 
 void printCache();
 void createCache();
@@ -76,12 +74,10 @@ int main () {
         tag = blockMP/blockSize;
 
 
-        modifyBlock(cm, blockMP, blockMC , setSize, tag, direction, op, accessTime);
+        modifyBlock(cm, blockMP, blockMC , setSize, tag, direction, op);
         printCache(cm);
         
-        printf("\nTotal entries: %d - Hits: %d - Misses: %d \nHit rate: %.2f - Access time: %d", hits+misses, hits, misses, hitrate, accessTime);
-        //printf("\nNumber of hits: %d \n", hits);
-        //printf("Number of misses: %d \n", misses); 
+        printf("\nTotal entries: %d - Hits: %d - Misses: %d \nHit rate: %.2f - Access time: %dcycles\n", hits+misses, hits, misses, hitrate, accessTime);
     }
 
     return 0;
@@ -138,17 +134,18 @@ void printCache(int cm[blockSize][5]){
 
 
 //Function that modificated the cache memory.
-void modifyBlock(int cm[blockSize][5], int blockMP, int blockMC , int setSize, int tag, int direction, int op, int accessTime) {
+void modifyBlock(int cm[blockSize][5], int blockMP, int blockMC , int setSize, int tag, int direction, int op) {
     if (setSize == 1) { // Direct-Map
         if (cm[blockMC][0] == 0) { // Miss (block transfer from MM)
             cm[blockMC][0] = 1;
             cm[blockMC][2] = tag;
             cm[blockMC][4] = blockMP;
-            //accessTime += Tmm + (-1) * Tbuff;
+            accessTime += Tcm + (Tmm+(blockSize-1)*Tbuff);
             misses++;
         } else {
             if (cm[blockMC][4] == blockMP && op == 0) { // Hit (reading current block)
                 accessTime += Tcm;
+                printf("%d", accessTime);
                 hits++;
             } else if (cm[blockMC][4] == blockMP && op == 1) { // Hit + Dirty (writing current block)
                 cm[blockMC][1] = 1;//dirty
@@ -159,20 +156,38 @@ void modifyBlock(int cm[blockSize][5], int blockMP, int blockMC , int setSize, i
                 cm[blockMC][1] = 0;//dirty clean
                 cm[blockMC][2] = tag;
                 cm[blockMC][4] = blockMP;
-                accessTime += Tmm + (-1) * Tbuff;
+                accessTime += Tcm + 2*(Tmm+(blockSize-1)*Tbuff);
                 misses++;
-            }//Falta trasferir los datos a la MP
+            }
         }
+    } else if (setSize == 8) { // Fully Associative
+        int i = 0;
+        int empty = 0;
+        while (empty == 0 && i < blockSize) { // Looks if there is some gap in cache
+            if (cm[i][0] == 0) {
+                empty = 1;
+            } else {
+                i++;
+            }
+        }
+        if (empty == 1) { // There is a gap
+            cm[i][0] = 1;
+            cm[i][2] = tag;
+            cm[i][4] = blockMP;
+            accessTime += Tcm + (Tmm+(blockSize-1)*Tbuff);
+            misses++;
+        } else { // CM is full
+            if (repPolicy == 0) { // FIFO Policy
 
+            } else { // LRU Policy
 
+            }
+        }
+    } else { // Set Associative
 
-
-
-    } else if (setSize == 8) {
-                    //fully associative
-    } else {
-                    //set associative
     }
+
+    hitrate = (float)hits/(float)(hits+misses);
 }
 
 

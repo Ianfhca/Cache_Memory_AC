@@ -17,21 +17,44 @@ int accessTime = 0; // Program total access time
 
 int Tcm = 2, Tmm = 21, Tbuff = 1; // Access times
 
+int error = 1;
+
 void printCache();
 void createCache();
 void modifyBlock();
+void LRUPolicy();
+void FIFOPolicy();
 // void updateFIFO();
 // void updateLRU();
 
 int main () {
-    printf("Insert word size: ");
+
+    //printf("Insert word size: ");
     //scanf("%d", &wordSize);
 
-    printf("Insert set size: ");
-    scanf("%d", &setSize);
-
-    printf("Insert replacement policy: ");
-    //scanf("%d", &repPolicy);
+    while (error == 1) {
+        printf("\n(1 = Direct-Map)   (8 = Fully Associative)   (2 or 4 = Set Associative) \nInsert set size: ");
+        scanf("%d", &setSize);
+        if(setSize == 1 || setSize == 8 || setSize == 2 || setSize == 4) {
+            error = 0;
+        } else {
+            printf("!! WRONG NUMBER INTRODUCED !!\n");
+            error = 1;
+        }
+    }
+    error = 1;
+    
+    while (error == 1) {
+        printf("\n(0 = FIFO)   (1 = LRU) \nInsert replacement policy: ");
+        scanf("%d", &repPolicy);
+        if(repPolicy == 0 || repPolicy == 1) {
+            error = 0;
+        } else {
+            printf("!! WRONG NUMBER INTRODUCED !!\n");
+            error = 1;
+        }
+    }
+    error = 1;
 
     cmSize = wordSize * blockSize;
     printf("\n\nSIMULATED CACHE MEMORY:");
@@ -60,17 +83,28 @@ int main () {
     int cm[blockSize][5];
     createCache(cm);
 
-    while(1) {        
-        printf("\nIntroduce direction: ");
+    while(direction != -1) {        
+        printf("\n(-1 to exit) \nIntroduce direction: ");
         scanf("%d", &direction);
+        if (direction == -1) {
+            break;
+        } else {
+            while (error == 1){
+                printf("Select read(0) or write(1) operation: ");
+                scanf("%d", &op);
+                if(op == 0 || op == 1){
+                    error = 0;
+                } else {
+                    printf("!! WRONG NUMBER INTRODUCED !!\n");
+                    error = 1;
+                }
+            }error = 1;
 
-        printf("Select read(0) or write(1) operation: ");
-        scanf("%d", &op);
-
-        modifyBlock(cm, direction, op);
-        printCache(cm);
+            modifyBlock(cm, direction, op);
+            printCache(cm);
         
-        printf("\nTotal entries: %d - Hits: %d - Misses: %d \nHit rate: %.2f - Access time: %d cycles\n", hits+misses, hits, misses, hitrate, accessTime);
+            printf("\nTotal entries: %d - Hits: %d - Misses: %d \nHit rate: %.2f - Access time: %d cycles\n", hits+misses, hits, misses, hitrate, accessTime);
+        }
     }
 
     return 0;
@@ -123,7 +157,7 @@ void printCache(int cm[blockSize][5]){
         printf("\n");
         j = 0;
     }
-}
+} 
 
 
 //Function that modificated the cache memory.
@@ -173,13 +207,14 @@ void modifyBlock(int cm[blockSize][5], int direction, int op) {
         int i = 0;
         int empty = -1, hit = 0;
         int max = -1, firstOut = 0;
-
+        int rem = blockSize -1;
         tag = direction/cmSize;
 
         while (hit == 0 && i < blockSize) { // Looks if there is some gap in CM
             if (cm[i][0] == 1) {
                 if (cm[i][2] == tag) {
                     hit = 1;
+                    rem = cm[i][3];
                 } else {
                     if (cm[i][3] > max) {
                         firstOut = i;
@@ -203,37 +238,32 @@ void modifyBlock(int cm[blockSize][5], int direction, int op) {
                 accessTime += Tcm;
                 hits++;    
             }
-        } else if (empty != -1) { // There is a gap
-            int j = 0;
-            if (repPolicy == 0) { // FIFO Policy
-                //cm[empty][3] = 0;
-                while (j < blockSize) {
-                    if (cm[j][0] == 1) {
-                        cm[j][3] = (cm[j][3]+1) % blockSize;
-                    }
-                    j++;
-                }
+           
+            if (repPolicy == 0) {  // FIFO Policy
+                FIFOPolicy(cm, hit);
             } else { // LRU Policy
-
+                LRUPolicy(cm, hit, rem, blockMP);
             }
+
+        } else if (empty != -1) { // There is a gap
+            if (repPolicy == 0) { // FIFO Policy
+                FIFOPolicy(cm, hit);
+            } else { // LRU Policy
+                LRUPolicy(cm, hit, rem, blockMP);
+            }
+            
+            accessTime += Tcm + (Tmm+(blockSize-1)*Tbuff);
             cm[empty][0] = 1;
             cm[empty][2] = tag;
             //cm[empty][3] = 0;
             cm[empty][4] = blockMP;
-            accessTime += Tcm + (Tmm+(blockSize-1)*Tbuff);
             misses++;
-        } else { // CM is full
-            int j = 0;
-            if (repPolicy == 0) { // FIFO Policy
-                //cm[firstOut][3] = 0;
-                while (j < blockSize) {
-                    if (cm[j][0] == 1) {
-                        cm[j][3] = (cm[j][3]+1) % blockSize;
-                    }
-                    j++;
-                }
-            } else { // LRU Policy
 
+        } else { // CM is full
+            if (repPolicy == 0) { // FIFO Policy
+                FIFOPolicy(cm, hit);
+            } else { // LRU Policy
+                LRUPolicy(cm, hit, rem, blockMP);
             }
             
             if (cm[firstOut][1] == 1) {
@@ -253,4 +283,49 @@ void modifyBlock(int cm[blockSize][5], int direction, int op) {
     }
 
     hitrate = (float)hits/(float)(hits+misses);
+}
+
+
+void LRUPolicy(int cm[blockSize][5], int hit, int rem, int blockMP) {
+    if (hit == 1) { // hit
+        int j = 0;
+        while (j < blockSize) {
+            if (cm[j][0] == 1) { //hit
+                if (cm[j][3] < rem) {
+                    cm[j][3] = (cm[j][3]+1) % blockSize;
+                } else if (cm[j][4] == blockMP) {
+                    cm[j][3] = 0;
+                }                
+            }
+            j++;
+        }  
+            
+    } else { //miss
+        int j = 0;
+        while(j < blockSize) {
+            if (cm[j][0] == 1) {
+                if (cm[j][4] == blockMP) {
+                    cm[j][3] = 0;
+                } else {
+                    cm[j][3] = (cm[j][3]+1) % blockSize;
+                }
+            }
+            j++;
+        }
+    }
+}
+
+
+void FIFOPolicy(int cm[blockSize][5], int hit) {
+    if (hit == 0) { //miss
+        int j = 0;
+        //cm[firstOut][3] = 0;
+        while (j < blockSize) {
+            if (cm[j][0] == 1) {
+                cm[j][3] = (cm[j][3]+1) % blockSize;
+            }
+            j++;
+        }
+    }
+ 
 }

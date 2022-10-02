@@ -27,25 +27,25 @@ void FIFOPolicy();
 // void updateFIFO();
 // void updateLRU();
 
-int main () {
+int main () { // Ian: https://stackoverflow.com/questions/23825754/how-to-handle-exception-when-scanf-of-integer-gets-a-character (Para tratar las excepciones)
 
-    //printf("Insert word size: ");
-    //scanf("%d", &wordSize);
+    printf("Insert word size (On Bytes): ");
+    scanf("%d", &wordSize);
 
     while (error == 1) {
-        printf("\n(1 = Direct-Map)   (8 = Fully Associative)   (2 or 4 = Set Associative) \nInsert set size: ");
+        printf("\nInsert set size (1 = Direct-Map)   (2 or 4 = Set Associative)   (8 = Fully Associative): ");
         scanf("%d", &setSize);
         if(setSize == 1 || setSize == 8 || setSize == 2 || setSize == 4) {
             error = 0;
         } else {
             printf("!! WRONG NUMBER INTRODUCED !!\n");
-            error = 1;
+            error = 1; // Ian: Creo que no hace falta
         }
     }
     error = 1;
     
     while (error == 1) {
-        printf("\n(0 = FIFO)   (1 = LRU) \nInsert replacement policy: ");
+        printf("\nInsert replacement policy (0 = FIFO)   (1 = LRU): ");
         scanf("%d", &repPolicy);
         if(repPolicy == 0 || repPolicy == 1) {
             error = 0;
@@ -84,7 +84,7 @@ int main () {
     createCache(cm);
 
     while(direction != -1) {        
-        printf("\n(-1 to exit) \nIntroduce direction: ");
+        printf("\nIntroduce direction (-1 exit): ");
         scanf("%d", &direction);
         if (direction == -1) {
             break;
@@ -203,7 +203,7 @@ void modifyBlock(int cm[blockSize][5], int direction, int op) {
                 misses++;
             }
         }
-    } else if (setSize == 8) { // Fully Associative -----------------------------------------------------
+    } else if (setSize == blockSize) { // Fully Associative -----------------------------------------------------
         int i = 0;
         int empty = -1, hit = 0;
         int max = -1, firstOut = 0;
@@ -278,7 +278,7 @@ void modifyBlock(int cm[blockSize][5], int direction, int op) {
             cm[firstOut][4] = blockMP;
             misses++;
         }
-    } else { // Set Associative -------------------------------------------------------------------------
+    } else { // Set Associative ------------------------------------------------------------------------- // Ian: FALTA TERMINAR
 
     }
 
@@ -293,7 +293,7 @@ void LRUPolicy(int cm[blockSize][5], int hit, int rem, int blockMP) {
             if (cm[j][0] == 1) { //hit
                 if (cm[j][3] < rem) {
                     cm[j][3] = (cm[j][3]+1) % blockSize;
-                } else if (cm[j][4] == blockMP) {
+                } else if (cm[j][4] == blockMP) { // Ian: Para ver si el bloque está en MC lo comparamos con el tag (Pero eso ya nos lo dice el hit)
                     cm[j][3] = 0;
                 }                
             }
@@ -304,7 +304,7 @@ void LRUPolicy(int cm[blockSize][5], int hit, int rem, int blockMP) {
         int j = 0;
         while(j < blockSize) {
             if (cm[j][0] == 1) {
-                if (cm[j][4] == blockMP) {
+                if (cm[j][4] == blockMP) { // Ian: Para ver si el bloque está en MC lo comparamos con el tag (Pero eso ya nos lo dice el hit)
                     cm[j][3] = 0;
                 } else {
                     cm[j][3] = (cm[j][3]+1) % blockSize;

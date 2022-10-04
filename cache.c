@@ -50,7 +50,7 @@ int main () {
   
 
     while (error == 1) {
-        printf("Insert word size (On Bytes)  (1, 4 or 8): ");
+        printf("Insert word size (On Bytes)  (4 or 8): ");
         scanf("%d", &wordSize);
         while(getchar() != '\n'); // will consume the charater
         
@@ -77,17 +77,22 @@ int main () {
     }
     error = 1;
     
-    while (error == 1) {
-        printf("\nInsert replacement policy (0 = FIFO)   (1 = LRU): ");
-        scanf("%d", &repPolicy);
-        while(getchar() != '\n'); // will consume the charater
-        if(repPolicy == 0 || repPolicy == 1) {
-            error = 0;
-        } else {
-            printf("!! WRONG NUMBER INTRODUCED !!\n");
+    if (setSize !=1)
+    {
+        while (error == 1) {
+            printf("\nInsert replacement policy (0 = FIFO)   (1 = LRU): ");
+            scanf("%d", &repPolicy);
+            while(getchar() != '\n'); // will consume the charater
+            if(repPolicy == 0 || repPolicy == 1) {
+                error = 0;
+            } else {
+                printf("!! WRONG NUMBER INTRODUCED !!\n");
+            }
         }
-    }
     error = 1;
+    }
+    
+    
 
     cmSize = wordSize * blockSize;
     printf("\n\nSIMULATED CACHE MEMORY:");
@@ -100,12 +105,16 @@ int main () {
     } else {
         printf("Type: Set Associative of %d sets - ", setSize);
     }
-
-    if (repPolicy == 0) {
-        printf("Policy: FIFO\n\n");
-    } else if (repPolicy == 1) {
-        printf("Policy: LRU.\n\n");
+    if (setSize != 1) {
+        if (repPolicy == 0) {
+            printf("Policy: FIFO\n\n");
+        } else if (repPolicy == 1) {
+            printf("Policy: LRU\n\n");
+        }
+    } else {
+        printf("Policy: No Replacement Policy\n\n");
     }
+    
     
     int word = 0;
     int blockMP = 0;

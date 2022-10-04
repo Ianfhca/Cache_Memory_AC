@@ -1,9 +1,26 @@
+/*
+## TITLE: SIMPLE CACHE MEMORY SIMULATOR
+#
+#
+## AUTORS: Ian Fernadez Hermida, Iker Goñi Perez.
+#
+## ENTITY: UPV/EHU.
+## CAREER: Informatics Engineer.
+## COURSE: Computer Architecture.
+## PROFESSOR: Iñigo Perona Balda.
+#
+## DATE: 04/10/2022.
+*/
+
+
+
+
 #include <stdio.h>
 #include <string.h>
 
 int cmSize = 32; // Default wordSize*blockSize
 int blockSize = 8; // Default 8 words
-int wordSize = 4; // Default 4 bytes
+int wordSize = 0; // Minimun 4 bytes
 int setSize = 1; // (Default) 1 = Direct-Map,  8 = Fully Associative, 2 or 4 = Set Associative
 int repPolicy = 0; // (Default) 0 = FIFO and 1 = LRU
 
@@ -17,7 +34,8 @@ int accessTime = 0; // Program total access time
 
 int Tcm = 2, Tmm = 21, Tbuff = 1; // Access times
 
-int error = 1;
+int error = 1; // error code
+
 
 void printCache();
 void createCache();
@@ -26,22 +44,35 @@ void LRUPolicy();
 void FIFOPolicy();
 void FIFOPolicySet();
 void LRUPolicySet();
-// void updateFIFO();
-// void updateLRU();
 
-int main () { // Ian: https://stackoverflow.com/questions/23825754/how-to-handle-exception-when-scanf-of-integer-gets-a-character (Para tratar las excepciones)
 
-    printf("Insert word size (On Bytes): ");
-    scanf("%d", &wordSize);
+int main () { 
+  
+
+    while (error == 1) {
+        printf("Insert word size (On Bytes)  (1, 4 or 8): ");
+        scanf("%d", &wordSize);
+        while(getchar() != '\n'); // will consume the charater
+        
+        if(wordSize == 4 || wordSize == 8) {
+            error = 0;
+        } else {
+            printf("!! WRONG NUMBER INTRODUCED !!\n");
+        }
+    }
+    error = 1;
+    
+   
+    
 
     while (error == 1) {
         printf("\nInsert set size (1 = Direct-Map)   (2 or 4 = Set Associative)   (8 = Fully Associative): ");
         scanf("%d", &setSize);
+        while(getchar() != '\n'); // will consume the charater
         if(setSize == 1 || setSize == 8 || setSize == 2 || setSize == 4) {
             error = 0;
         } else {
             printf("!! WRONG NUMBER INTRODUCED !!\n");
-            error = 1; // Ian: Creo que no hace falta
         }
     }
     error = 1;
@@ -49,11 +80,11 @@ int main () { // Ian: https://stackoverflow.com/questions/23825754/how-to-handle
     while (error == 1) {
         printf("\nInsert replacement policy (0 = FIFO)   (1 = LRU): ");
         scanf("%d", &repPolicy);
+        while(getchar() != '\n'); // will consume the charater
         if(repPolicy == 0 || repPolicy == 1) {
             error = 0;
         } else {
             printf("!! WRONG NUMBER INTRODUCED !!\n");
-            error = 1;
         }
     }
     error = 1;
@@ -88,17 +119,18 @@ int main () { // Ian: https://stackoverflow.com/questions/23825754/how-to-handle
     while(direction != -1) {        
         printf("\nIntroduce direction (-1 exit): ");
         scanf("%d", &direction);
+        while(getchar() != '\n'); // will consume the charater
         if (direction == -1) {
             break;
         } else {
             while (error == 1){
                 printf("Select read(0) or write(1) operation: ");
                 scanf("%d", &op);
+                while(getchar() != '\n'); // will consume the charater
                 if(op == 0 || op == 1){
                     error = 0;
                 } else {
                     printf("!! WRONG NUMBER INTRODUCED !!\n");
-                    error = 1;
                 }
             }error = 1;
 
@@ -209,7 +241,7 @@ void modifyBlock(int cm[blockSize][5], int direction, int op) {
         int i = 0;
         int empty = -1, hit = 0;
         int max = -1, firstOut = 0;
-        int rem = blockSize -1;
+        int rem = setSize -1;
         tag = direction/cmSize;
 
         while (hit == 0 && i < blockSize) { // Looks if there is some gap in CM
@@ -244,20 +276,19 @@ void modifyBlock(int cm[blockSize][5], int direction, int op) {
             if (repPolicy == 0) {  // FIFO Policy
                 FIFOPolicy(cm, hit);
             } else { // LRU Policy
-                LRUPolicy(cm, hit, rem, blockMP);
+                LRUPolicy(cm, hit, rem, blockMP, tag);
             }
 
         } else if (empty != -1) { // There is a gap
             if (repPolicy == 0) { // FIFO Policy
                 FIFOPolicy(cm, hit);
             } else { // LRU Policy
-                LRUPolicy(cm, hit, rem, blockMP);
+                LRUPolicy(cm, hit, rem, blockMP, tag);
             }
             
             accessTime += Tcm + (Tmm+(blockSize-1)*Tbuff);
             cm[empty][0] = 1;
             cm[empty][2] = tag;
-            //cm[empty][3] = 0;
             cm[empty][4] = blockMP;
             misses++;
 
@@ -265,7 +296,7 @@ void modifyBlock(int cm[blockSize][5], int direction, int op) {
             if (repPolicy == 0) { // FIFO Policy
                 FIFOPolicy(cm, hit);
             } else { // LRU Policy
-                LRUPolicy(cm, hit, rem, blockMP);
+                LRUPolicy(cm, hit, rem, blockMP, tag);
             }
             
             if (cm[firstOut][1] == 1) {
@@ -276,31 +307,20 @@ void modifyBlock(int cm[blockSize][5], int direction, int op) {
             }
             cm[firstOut][0] = 1;
             cm[firstOut][2] = tag;
-            //cm[firstOut][3] = 0;
             cm[firstOut][4] = blockMP;
             misses++;
         }
-    } else { // Set Associative ------------------------------------------------------------------------- // Ian: FALTA TERMINAR
-        
-        //Goñi
-
-        int mSize = 0; // tamaño de cada matriz
+    } else { // Set Associative ------------------------------------------------------------------------- 
+        int mSize = 0; // blockSize/setSize
         int i = 0; 
         int empty = -1, hit = 0;
         int max = -1, firstOut = 0;
         int rem = blockSize -1;
-        //numMatriz = blockMP%setSize;
+
         tag = blockMP/setSize;
         mSize = blockSize / setSize;
-       
-        set = (blockMP%blockSize) % mSize; // fila de la matriz
+        set = (blockMP%blockSize) % mSize; // Line of set
         i = set;
-        printf("i: %d\n", i);
-        printf("blockMP: %d\n", blockMP);
-        printf("blockMC: %d\n", blockMC);
-        printf("Tamaño de la matrix: %d\n", mSize);
-        printf("set: %d\n", set);
-        printf("tag: %d\n", tag);
 
        while (hit == 0 && i < mSize*setSize){ // mSize*setSize = 8  
         if (cm[i][0] == 1) {
@@ -332,29 +352,28 @@ void modifyBlock(int cm[blockSize][5], int direction, int op) {
             }
            
             if (repPolicy == 0) {  // FIFO Policy
-                FIFOPolicySet(cm, hit, mSize, set);
+                FIFOPolicySet(cm, hit, mSize, set, tag);
             } else { // LRU Policy
-                LRUPolicySet(cm, hit, rem, blockMP, mSize, set);
+                LRUPolicySet(cm, hit, rem, blockMP, mSize, set, tag);
             }
 
         } else if (empty != -1) { // There is a gap
             if (repPolicy == 0) { // FIFO Policy
-                FIFOPolicySet(cm, hit, mSize, set);
+                FIFOPolicySet(cm, hit, mSize, set, tag);
             } else { // LRU Policy
-                LRUPolicySet(cm, hit, rem, blockMP, mSize, set);
+                LRUPolicySet(cm, hit, rem, blockMP, mSize, set, tag);
             }
             
             accessTime += Tcm + (Tmm+(blockSize-1)*Tbuff);
             cm[empty][0] = 1;
             cm[empty][2] = tag;
-            //cm[empty][3] = 0;
             cm[empty][4] = blockMP;
             misses++;
         } else { // CM is full
             if (repPolicy == 0) { // FIFO Policy
-                FIFOPolicySet(cm, hit, mSize, set);
+                FIFOPolicySet(cm, hit, mSize, set, tag);
             } else { // LRU Policy
-                LRUPolicySet(cm, hit, rem, blockMP, mSize, set);
+                LRUPolicySet(cm, hit, rem, blockMP, mSize, set, tag);
             }
             
             if (cm[firstOut][1] == 1) {
@@ -365,7 +384,6 @@ void modifyBlock(int cm[blockSize][5], int direction, int op) {
             }
             cm[firstOut][0] = 1;
             cm[firstOut][2] = tag;
-            //cm[firstOut][3] = 0;
             cm[firstOut][4] = blockMP;
             misses++;
         }
@@ -376,14 +394,14 @@ void modifyBlock(int cm[blockSize][5], int direction, int op) {
 }
 
 
-void LRUPolicy(int cm[blockSize][5], int hit, int rem, int blockMP) {
-    if (hit == 1) { // hit
+void LRUPolicy(int cm[blockSize][5], int hit, int rem, int blockMP, int tag) {
+    if (hit == 1) { // Hit
         int j = 0;
         while (j < blockSize) {
-            if (cm[j][0] == 1) { //hit
+            if (cm[j][0] == 1) { // Hit in thats position
                 if (cm[j][3] < rem) {
                     cm[j][3] = (cm[j][3]+1) % blockSize;
-                } else if (cm[j][4] == blockMP) { // Ian: Para ver si el bloque está en MC lo comparamos con el tag (Pero eso ya nos lo dice el hit)
+                } else if (cm[j][2] == tag) { 
                     cm[j][3] = 0;
                 }                
             }
@@ -394,7 +412,7 @@ void LRUPolicy(int cm[blockSize][5], int hit, int rem, int blockMP) {
         int j = 0;
         while(j < blockSize) {
             if (cm[j][0] == 1) {
-                if (cm[j][4] == blockMP) { // Ian: Para ver si el bloque está en MC lo comparamos con el tag (Pero eso ya nos lo dice el hit)
+                if (cm[j][2] == tag) { 
                     cm[j][3] = 0;
                 } else {
                     cm[j][3] = (cm[j][3]+1) % blockSize;
@@ -409,7 +427,6 @@ void LRUPolicy(int cm[blockSize][5], int hit, int rem, int blockMP) {
 void FIFOPolicy(int cm[blockSize][5], int hit) {
     if (hit == 0) { //miss
         int j = 0;
-        //cm[firstOut][3] = 0;
         while (j < blockSize) {
             if (cm[j][0] == 1) {
                 cm[j][3] = (cm[j][3]+1) % blockSize;
@@ -420,16 +437,14 @@ void FIFOPolicy(int cm[blockSize][5], int hit) {
  
 }
 
-void LRUPolicySet(int cm[blockSize][5], int hit, int rem, int blockMP, int mSize, int set) {
-    if (hit == 1) { // hit
+void LRUPolicySet(int cm[blockSize][5], int hit, int rem, int blockMP, int mSize, int set, int tag) {
+    if (hit == 1) { // Hit
         int j = set;
         while (j < mSize*setSize) {
-            if (cm[j][0] == 1) { //hit
+            if (cm[j][0] == 1) { // Hit in thats position
                 if (cm[j][3] < rem) {
-                                    printf("REM: %d\n", cm[j][3]);
                     cm[j][3] = (cm[j][3]+1) % setSize;
-                                    printf("REM: %d\n", cm[j][3]);
-                } else if (cm[j][4] == blockMP) { // Ian: Para ver si el bloque está en MC lo comparamos con el tag (Pero eso ya nos lo dice el hit)
+                } else if (cm[j][2] == tag) { 
                     cm[j][3] = 0;
                 }                
             }
@@ -440,7 +455,7 @@ void LRUPolicySet(int cm[blockSize][5], int hit, int rem, int blockMP, int mSize
         int j = set;
         while(j < mSize*setSize) {
             if (cm[j][0] == 1) {
-                if (cm[j][4] == blockMP) { // Ian: Para ver si el bloque está en MC lo comparamos con el tag (Pero eso ya nos lo dice el hit)
+                if (cm[j][2] == tag) { 
                     cm[j][3] = 0;
                 } else {
                     cm[j][3] = (cm[j][3]+1) % setSize;
@@ -451,10 +466,9 @@ void LRUPolicySet(int cm[blockSize][5], int hit, int rem, int blockMP, int mSize
     }
 }
 
-void FIFOPolicySet(int cm[blockSize][5], int hit, int mSize, int set) {
+void FIFOPolicySet(int cm[blockSize][5], int hit, int mSize, int set, int tag) {
     if (hit == 0) { //miss
         int j = set;
-        //cm[firstOut][3] = 0;
         while (j < mSize*setSize) {
             if (cm[j][0] == 1) {
                 cm[j][3] = (cm[j][3]+1) % setSize;
@@ -464,3 +478,4 @@ void FIFOPolicySet(int cm[blockSize][5], int hit, int mSize, int set) {
     }
  
 }
+

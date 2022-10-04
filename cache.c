@@ -24,10 +24,8 @@ void createCache();
 void modifyBlock();
 void LRUPolicy();
 void FIFOPolicy();
-void isGap();
-void LRUPolicySet();
 void FIFOPolicySet();
-void isGapSet();
+void LRUPolicySet();
 // void updateFIFO();
 // void updateLRU();
 
@@ -43,6 +41,7 @@ int main () { // Ian: https://stackoverflow.com/questions/23825754/how-to-handle
             error = 0;
         } else {
             printf("!! WRONG NUMBER INTRODUCED !!\n");
+            error = 1; // Ian: Creo que no hace falta
         }
     }
     error = 1;
@@ -54,6 +53,7 @@ int main () { // Ian: https://stackoverflow.com/questions/23825754/how-to-handle
             error = 0;
         } else {
             printf("!! WRONG NUMBER INTRODUCED !!\n");
+            error = 1;
         }
     }
     error = 1;
@@ -98,8 +98,9 @@ int main () { // Ian: https://stackoverflow.com/questions/23825754/how-to-handle
                     error = 0;
                 } else {
                     printf("!! WRONG NUMBER INTRODUCED !!\n");
+                    error = 1;
                 }
-            } error = 1;
+            }error = 1;
 
             modifyBlock(cm, direction, op);
             printCache(cm);
@@ -198,7 +199,7 @@ void modifyBlock(int cm[blockSize][5], int direction, int op) {
                     accessTime += Tcm + (Tmm+(blockSize-1)*Tbuff);
                 }
 
-                cm[blockMC][0] = 1;  //  Goñi: juraria que no es necesario porque aunq haya sido mis el bit de esa posicion ya esta a 1 solo hace falta remplazar el block MP, tag (que hacemos debajo)
+                cm[blockMC][0] = 1;
                 cm[blockMC][2] = tag;
                 cm[blockMC][4] = blockMP;
                 misses++;
@@ -210,10 +211,26 @@ void modifyBlock(int cm[blockSize][5], int direction, int op) {
         int max = -1, firstOut = 0;
         int rem = blockSize -1;
         tag = direction/cmSize;
-        
-        isGap(cm, hit, max, tag, i, rem, firstOut, empty);
-        
-        printf("bucle terminado\n"); // Goñi: esto hay que quitarlo? o quieres que se vea?
+
+        while (hit == 0 && i < blockSize) { // Looks if there is some gap in CM
+            if (cm[i][0] == 1) {
+                if (cm[i][2] == tag) {
+                    hit = 1;
+                    rem = cm[i][3];
+                } else {
+                    if (cm[i][3] > max) {
+                        firstOut = i;
+                        max = cm[i][3];
+                    }
+                }
+            } else {
+                if (empty == -1) {
+                    empty = i;
+                }
+            }
+            i++;
+        }
+        printf("bucle terminado\n");
         if (hit == 1) {
             if (op == 0) { // Hit (reading current block)
                 accessTime += Tcm;
@@ -284,7 +301,25 @@ void modifyBlock(int cm[blockSize][5], int direction, int op) {
         printf("Tamaño de la matrix: %d\n", mSize);
         printf("set: %d\n", set);
         printf("tag: %d\n", tag);
-        isGapSet(cm, hit, max, tag, i, rem, firstOut, empty, mSize);
+
+       while (hit == 0 && i < mSize*setSize){ // mSize*setSize = 8  
+        if (cm[i][0] == 1) {
+            if (cm[i][2] == tag) { //hit primer conjunto
+            hit = 1;
+            rem = cm[i][3];
+            } else {
+                if (cm[i][3] > max) {
+                firstOut = i;
+                max = cm[i][3];
+                }
+            }
+        } else {
+            if (empty == -1) {
+                empty = i;
+            }
+        }
+        i = i + mSize; 
+    }
         
         if (hit == 1) {
             if (op == 0) { // Hit (reading current block)
@@ -334,61 +369,6 @@ void modifyBlock(int cm[blockSize][5], int direction, int op) {
             cm[firstOut][4] = blockMP;
             misses++;
         }
-
-////////////////////////
-/*
-        if (setSize == 2) { // 2 SetSize, mSize = 4
-            if (cm[set][0] == 0) {  // miss pirmer conjunto
-                cm[set][0] = 1;
-                cm[set][2] = tag;
-                cm[set][4] = blockMP;
-                misses++;
-            } else { // ocupado primer conjunto
-                if (cm[set][2] == tag) { // Hit (reading current block)
-                    if (op == 0) { 
-                        accessTime += Tcm;
-                        hits++;
-                    } else {  // Hit + Dirty (writing current block) // op = 1
-                        cm[set][1] = 1; // Dirty
-                        accessTime += Tcm;
-                        hits++;
-                    }
-                } else  {  // es otro bloque del mismo conjunto
-                    if (cm[set + mSize][0] == 0) { // miss el segundo conjunto
-                        cm[set + mSize][0] = 1;
-                        cm[set + mSize][2] = tag;
-                        cm[set + mSize][4] = blockMP;
-                        misses++;
-                    } else {  // ocupado el segundo conjunto
-                        if (cm[set + mSize][2] == tag) { // Hit (reading current block)
-                            if (op == 0) { 
-                                accessTime += Tcm;
-                                hits++;
-                            } else {  // Hit + Dirty (writing current block) // op = 1
-                                cm[set + mSize][1] = 1; // Dirty
-                                accessTime += Tcm;
-                                hits++;
-                            }
-                        }else { // miss y los conjutos esttan ocupados
-
-                            cm[set + mSize][2] = tag;
-                            cm[set + mSize][4] = blockMP;
-                            misses++;
-                        }
-                    }  
-                }
-            }
-        } else {  // 4 setSize, mSize = 2
-            
-        }
-        
-
-
-
-
-*/
-
-////////////////////////////
 
     }
 
@@ -440,56 +420,15 @@ void FIFOPolicy(int cm[blockSize][5], int hit) {
  
 }
 
-void isGap(int cm[blockSize][5], int hit, int max, int tag, int i, int rem, int firstOut, int empty){
-    while (hit == 0 && i < blockSize) { // Looks if there is some gap in CM
-        if (cm[i][0] == 1) {
-            if (cm[i][2] == tag) {
-                hit = 1;
-                rem = cm[i][3];
-            } else {
-                if (cm[i][3] > max) {
-                    firstOut = i;
-                    max = cm[i][3];
-                }
-            }
-        } else {
-            if (empty == -1) {
-                empty = i;
-            }
-        }
-        i++;
-    }
-}
-
-
-void isGapSet(int cm[blockSize][5], int hit, int max, int tag, int i, int rem, int firstOut, int empty, int mSize) {
-    while (hit == 0 && i < mSize*setSize){ // mSize*setSize = 8  
-        if (cm[i][0] == 1) {
-            if (cm[i][2] == tag) { //hit primer conjunto
-            hit = 1;
-            rem = cm[i][3];
-            } else {
-                if (cm[i][3] > max) {
-                firstOut = i;
-                max = cm[i][3];
-                }
-            }
-        } else {
-            if (empty == -1) {
-                empty = i;
-            }
-        }
-        i = i + mSize; 
-    }
-}
-
 void LRUPolicySet(int cm[blockSize][5], int hit, int rem, int blockMP, int mSize, int set) {
     if (hit == 1) { // hit
         int j = set;
         while (j < mSize*setSize) {
             if (cm[j][0] == 1) { //hit
                 if (cm[j][3] < rem) {
-                    cm[j][3] = (cm[j][3]+1) % mSize*setSize;
+                                    printf("REM: %d\n", cm[j][3]);
+                    cm[j][3] = (cm[j][3]+1) % setSize;
+                                    printf("REM: %d\n", cm[j][3]);
                 } else if (cm[j][4] == blockMP) { // Ian: Para ver si el bloque está en MC lo comparamos con el tag (Pero eso ya nos lo dice el hit)
                     cm[j][3] = 0;
                 }                
@@ -498,26 +437,27 @@ void LRUPolicySet(int cm[blockSize][5], int hit, int rem, int blockMP, int mSize
         }  
             
     } else { //miss
-        int j = 0;
+        int j = set;
         while(j < mSize*setSize) {
             if (cm[j][0] == 1) {
                 if (cm[j][4] == blockMP) { // Ian: Para ver si el bloque está en MC lo comparamos con el tag (Pero eso ya nos lo dice el hit)
                     cm[j][3] = 0;
                 } else {
-                    cm[j][3] = (cm[j][3]+1) % mSize*setSize;
+                    cm[j][3] = (cm[j][3]+1) % setSize;
                 }
             }
             j = j + mSize;
         }
     }
 }
+
 void FIFOPolicySet(int cm[blockSize][5], int hit, int mSize, int set) {
     if (hit == 0) { //miss
         int j = set;
         //cm[firstOut][3] = 0;
         while (j < mSize*setSize) {
             if (cm[j][0] == 1) {
-                cm[j][3] = (cm[j][3]+1) % mSize*setSize;
+                cm[j][3] = (cm[j][3]+1) % setSize;
             }
             j = j + mSize;
         }
